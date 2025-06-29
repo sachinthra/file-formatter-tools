@@ -22,7 +22,7 @@ func RegisterRoutes(r *gin.Engine, jobManager *jobs.Manager, s3Client *s3.Client
 	{
 		api.GET("/progress/:jobID", ProgressHandler(jobManager))
 		api.POST("/resize", ResizeHandler(s3Client, jobManager))
-		api.POST("/batch", BatchHandler())
+		api.POST("/batch", BatchHandler(s3Client, jobManager))
 		api.POST("/center-crop", CenterCropHandler())
 		api.POST("/upload-from-url", UploadFromURLHandler())
 	}
@@ -121,12 +121,133 @@ func ResizeHandler(s3Client *s3.Client, jobManager *jobs.Manager) gin.HandlerFun
 	}
 }
 
-// Placeholder handler: /api/batch
-func BatchHandler() gin.HandlerFunc {
+func BatchHandler(s3Client *s3.Client, jobManager *jobs.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
+		// Read options
+		width, _ := strconv.Atoi(c.PostForm("width"))
+		height, _ := strconv.Atoi(c.PostForm("height"))
+		maintainAspect := c.PostForm("maintain_aspect_ratio") == "true"
+		quality, _ := strconv.Atoi(c.DefaultPostForm("quality", "85"))
+		maxSizeKB, _ := strconv.Atoi(c.DefaultPostForm("max_size_kb", "0")) // 0 = no limit
+
+		// Parse files
+		form, err := c.MultipartForm()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse multipart form"})
+			return
+		}
+		imageFiles := form.File["images"]
+		if len(imageFiles) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No images provided"})
+			return
+		}
+
+		// Create parent batch job
+		batchJobID, err := jobManager.NewJob(ctx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create batch job"})
+			return
+		}
+		_ = jobManager.SetProgress(ctx, batchJobID, 0)
+		numFiles := len(imageFiles)
+
+		imageJobs := []map[string]interface{}{}
+		for idx, fileHeader := range imageFiles {
+			// Create sub-job for image
+			jobID, _ := jobManager.NewJob(ctx)
+			_ = jobManager.SetProgress(ctx, jobID, 5)
+
+			// Open file
+			file, err := fileHeader.Open()
+			if err != nil {
+				imageJobs = append(imageJobs, map[string]interface{}{
+					"job_id":   jobID,
+					"filename": fileHeader.Filename,
+					"error":    "Failed to open image",
+				})
+				continue
+			}
+			imageData, err := io.ReadAll(file)
+			file.Close()
+			if err != nil {
+				imageJobs = append(imageJobs, map[string]interface{}{
+					"job_id":   jobID,
+					"filename": fileHeader.Filename,
+					"error":    "Failed to read image",
+				})
+				continue
+			}
+			_ = jobManager.SetProgress(ctx, jobID, 20)
+
+			// Detect extension/format
+			ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
+			if ext == "" {
+				ext = ".jpg" // default
+			}
+
+			// Resize
+			result, format, err := imgproc.ResizeImage(imageData, width, height, maintainAspect, quality, maxSizeKB)
+			if err != nil {
+				imageJobs = append(imageJobs, map[string]interface{}{
+					"job_id":   jobID,
+					"filename": fileHeader.Filename,
+					"error":    "Resize failed: " + err.Error(),
+				})
+				_ = jobManager.CompleteJob(ctx, jobID)
+				continue
+			}
+			_ = jobManager.SetProgress(ctx, jobID, 60)
+
+			// Upload to S3
+			uid := fmt.Sprintf("%d", time.Now().UnixNano())
+			ext = strings.TrimPrefix(ext, ".")
+			objectName := fmt.Sprintf("batch/%s_%s.%s", jobID, uid, ext)
+			contentType := "image/" + format
+			if err := s3Client.Upload(ctx, objectName, result, contentType); err != nil {
+				imageJobs = append(imageJobs, map[string]interface{}{
+					"job_id":   jobID,
+					"filename": fileHeader.Filename,
+					"error":    "Failed to upload to S3: " + err.Error(),
+				})
+				_ = jobManager.CompleteJob(ctx, jobID)
+				continue
+			}
+			_ = jobManager.SetProgress(ctx, jobID, 80)
+
+			// Presigned URL
+			url, err := s3Client.GetPresignedURL(ctx, objectName, 10*time.Minute)
+			if err != nil {
+				imageJobs = append(imageJobs, map[string]interface{}{
+					"job_id":   jobID,
+					"filename": fileHeader.Filename,
+					"error":    "Failed to get download URL: " + err.Error(),
+				})
+				_ = jobManager.CompleteJob(ctx, jobID)
+				continue
+			}
+
+			_ = jobManager.CompleteJob(ctx, jobID)
+
+			imageJobs = append(imageJobs, map[string]interface{}{
+				"job_id":       jobID,
+				"filename":     fileHeader.Filename,
+				"download_url": url,
+				"format":       format,
+				"object_name":  objectName,
+			})
+
+			// Update batch job progress
+			_ = jobManager.SetProgress(ctx, batchJobID, (idx+1)*100/numFiles)
+		}
+
+		_ = jobManager.CompleteJob(ctx, batchJobID)
+
 		c.JSON(http.StatusOK, gin.H{
-			"message":  "Batch endpoint hit",
-			"endpoint": "/api/batch",
+			"message":      "Batch resize is experimental.",
+			"batch_job_id": batchJobID,
+			"image_jobs":   imageJobs,
 		})
 	}
 }
