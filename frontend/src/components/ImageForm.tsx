@@ -1,5 +1,6 @@
 import { imageState } from '../hooks/useImageProcessor';
 import styles from './ImageForm.module.css';
+import { fetchWithAuth } from '../utils/api';
 
 export function ImageForm() {
   const handleSubmit = async (event: Event) => {
@@ -29,7 +30,7 @@ export function ImageForm() {
     if (imageState.value.maxSize) formData.append('maxSize', imageState.value.maxSize);
 
     try {
-      const response = await fetch('/api/resize', {
+      const response = await fetchWithAuth('/api/resize', {
         method: 'POST',
         body: formData,
       });
@@ -51,7 +52,7 @@ export function ImageForm() {
   const pollProgress = () => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/progress/${imageState.value.jobId}`);
+        const response = await fetchWithAuth(`/api/progress/${imageState.value.jobId}`);
         const data = await response.json();
         
         imageState.value = { ...imageState.value, progress: data.progress };

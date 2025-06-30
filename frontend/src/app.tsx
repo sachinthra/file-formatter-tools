@@ -19,7 +19,7 @@ export function App() {
           <h3>Original Image Data</h3>
           <p>Width: {imageState.value.originalWidth}px</p>
           <p>Height: {imageState.value.originalHeight}px</p>
-          <p>Size: {imageState.value.originalSize}</p>
+          <p>Size: {imageState.value.originalSize} KB</p>
         </div>
       )}
 

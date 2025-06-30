@@ -30,7 +30,7 @@ export function ImageUploader() {
   };
 
   const processFile = (file: File) => {
-    const originalSize = (file.size / 1024).toFixed(2) + ' KB';
+    const originalSize = (file.size / 1024).toFixed(2);
     const img = new Image();
     
     imageState.value = { ...imageState.value, imageFile: file };
@@ -43,7 +43,7 @@ export function ImageUploader() {
         originalSize,
         width: img.width.toString(),
         height: img.height.toString(),
-        maxSize: originalSize
+        maxSize: originalSize.toString(),
       };
     };
     

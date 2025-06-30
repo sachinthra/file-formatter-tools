@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: ../backend
@@ -8,15 +6,17 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - redis
-      - minio
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
-      - REDIS_ADDR=redis:6379
-      - S3_ENDPOINT=minio:9000
-      - S3_ACCESS_KEY=minioadmin
-      - S3_SECRET_KEY=minioadmin
-      - S3_BUCKET=images
-      - API_KEYS=yourapikey123,anotherkey456
+      REDIS_ADDR: redis:6379
+      S3_ENDPOINT: minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+      API_KEYS: ${API_KEYS}
       # Add other needed env vars
     networks:
       - app-network
@@ -25,6 +25,8 @@ services:
     build: ../frontend
     ports:
       - "8080:80"
+    environment:
+      - BACKEND_API_KEY=${BACKEND_API_KEY}
     depends_on:
       - backend
     # no ports exposed, as nginx is the entrypoint
@@ -33,6 +35,11 @@ services:
 
   redis:
     image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
     ports:
       - "6379:6379"
     networks:
@@ -40,13 +47,18 @@ services:
 
   minio:
     image: minio/minio:latest
-    command: server /data
+    command: server --console-address ":9001" /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio-data:/data
     networks:

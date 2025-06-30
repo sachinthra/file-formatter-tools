@@ -54,7 +54,6 @@ docker-compose down
 ### Backend
 - `API_KEYS`: Comma-separated list of API keys for authenticating requests.
 - `REDIS_ADDR`: Address of the Redis server.
-- `S3_ENDPOINT`: Endpoint for the S3-compatible storage (e.g., Minio).
 - `S3_ACCESS_KEY`: Access key for S3.
 - `S3_SECRET_KEY`: Secret key for S3.
 - `S3_BUCKET`: Name of the S3 bucket for storing images.

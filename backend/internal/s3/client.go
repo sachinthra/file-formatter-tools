@@ -3,6 +3,7 @@ package s3
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"net/url"
 	"time"
@@ -19,10 +20,24 @@ type Client struct {
 }
 
 func NewS3Client(cfg *config.Config) *Client {
-	minioClient, err := minio.New(cfg.S3Endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.S3AccessKey, cfg.S3SecretKey, ""),
-		Secure: false, // Set true if using https
-	})
+	var minioClient *minio.Client
+	var err error
+
+	// Retry logic for connecting to MinIO
+	maxRetries := 5
+
+	for i := 0; i < maxRetries; i++ {
+		minioClient, err = minio.New(cfg.S3Endpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(cfg.S3AccessKey, cfg.S3SecretKey, ""),
+			Secure: false,
+		})
+		if err == nil {
+			break
+		}
+		log.Printf("[WARN] [S3] Attempt %d: Failed to connect to MinIO: %v", i+1, err)
+		time.Sleep(time.Second * 2) // Wait 2 seconds between retries
+	}
+
 	if err != nil {
 		log.Fatalf("[FATAL] [S3] Failed to create S3 client: %v", err)
 	}
@@ -31,6 +46,23 @@ func NewS3Client(cfg *config.Config) *Client {
 		Minio:  minioClient,
 		Bucket: cfg.S3Bucket,
 	}
+}
+
+func (c *Client) CreateBucketIfNotExists(bucket string) error {
+	exists, err := c.Minio.BucketExists(context.Background(), bucket)
+	if err != nil {
+		return fmt.Errorf("failed to check if bucket exists: %w", err)
+	}
+
+	if !exists {
+		err = c.Minio.MakeBucket(context.Background(), bucket, minio.MakeBucketOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create bucket: %w", err)
+		}
+		log.Printf("Created S3 bucket: %s", bucket)
+	}
+
+	return nil
 }
 
 // Uploads a file to S3, returns the object key
