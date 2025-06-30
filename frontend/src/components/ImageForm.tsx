@@ -1,11 +1,12 @@
 import { imageState } from '../hooks/useImageProcessor';
 import styles from './ImageForm.module.css';
 import { fetchWithAuth } from '../utils/api';
+// import { transformMinioUrl } from '../utils/url';
 
 export function ImageForm() {
   const handleSubmit = async (event: Event) => {
     event.preventDefault();
-    
+
     imageState.value = {
       ...imageState.value,
       errorMessage: null,
@@ -40,7 +41,18 @@ export function ImageForm() {
       }
 
       const data = await response.json();
-      imageState.value = { ...imageState.value, jobId: data.job_id };
+
+      // const transformedUrl = data.download_url ? transformMinioUrl(data.download_url) : null;
+      // console.log('[DEBUG] Original URL:', data.download_url);
+      // console.log('[DEBUG] Transformed URL:', transformedUrl);
+
+      imageState.value = {
+        ...imageState.value,
+        jobId: data.job_id,
+        downloadUrl: data.download_url,
+        objectName: data.object_name
+      };
+
       pollProgress();
     } catch (error) {
       if (error instanceof Error) {
@@ -54,13 +66,15 @@ export function ImageForm() {
       try {
         const response = await fetchWithAuth(`/api/progress/${imageState.value.jobId}`);
         const data = await response.json();
-        
+        console.log('[DEBUG] Progress data:', data);
+
         imageState.value = { ...imageState.value, progress: data.progress };
 
         if (data.progress === 100) {
           clearInterval(interval);
-          imageState.value = { ...imageState.value, downloadUrl: data.download_url };
-          updateProcessedImageData(data.download_url);
+          if (imageState.value.downloadUrl) {
+            updateProcessedImageData(imageState.value.downloadUrl);
+          }
         }
       } catch (error) {
         clearInterval(interval);
@@ -73,20 +87,35 @@ export function ImageForm() {
   };
 
   const updateProcessedImageData = async (downloadUrl: string) => {
-    const img = new Image();
-    img.onload = () => {
+    try {
+      // Use fetchWithAuth for both image and blob requests
+      const imgResponse = await fetchWithAuth(downloadUrl);
+      if (!imgResponse.ok) {
+        throw new Error('Failed to fetch processed image');
+      }
+      const blob = await imgResponse.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const img = new Image();
+      img.onload = () => {
+        imageState.value = {
+          ...imageState.value,
+          processedWidth: img.width,
+          processedHeight: img.height,
+          processedSize: (blob.size / 1024).toFixed(2) + ' KB'
+        };
+        // Clean up the object URL after use
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.src = objectUrl;
+
+    } catch (error) {
       imageState.value = {
         ...imageState.value,
-        processedWidth: img.width,
-        processedHeight: img.height
+        errorMessage: 'Failed to load processed image details'
       };
-    };
-    img.src = downloadUrl;
-
-    const response = await fetch(downloadUrl);
-    const blob = await response.blob();
-    const processedSize = (blob.size / 1024).toFixed(2) + ' KB';
-    imageState.value = { ...imageState.value, processedSize };
+      console.error('[ERROR] Failed to load image:', error);
+    }
   };
 
   return (

@@ -86,7 +86,9 @@ func (c *Client) GetPresignedURL(ctx context.Context, objectName string, expiry 
 		log.Printf("[ERROR] [S3] Failed to get presigned URL for %s: %v", objectName, err)
 		return "", err
 	}
+
 	log.Printf("[INFO] [S3] Generated presigned URL for %s", objectName)
+
 	return u.String(), nil
 }
 

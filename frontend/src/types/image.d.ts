@@ -16,4 +16,5 @@ export interface ImageState {
   processedWidth: number | null;
   processedHeight: number | null;
   processedSize: string | null;
+  objectName: string | null;
 }

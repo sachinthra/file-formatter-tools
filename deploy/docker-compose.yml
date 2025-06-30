@@ -26,7 +26,7 @@ services:
     ports:
       - "8080:80"
     environment:
-      - BACKEND_API_KEY=${BACKEND_API_KEY}
+      BACKEND_API_KEY: ${BACKEND_API_KEY}
     depends_on:
       - backend
     # no ports exposed, as nginx is the entrypoint
@@ -58,7 +58,7 @@ services:
       - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD} 
     volumes:
       - minio-data:/data
     networks:

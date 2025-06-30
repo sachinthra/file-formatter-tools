@@ -18,7 +18,8 @@ const initialState: ImageState = {
   originalSize: null,
   processedWidth: null,
   processedHeight: null,
-  processedSize: null
+  processedSize: null,
+  objectName: null
 };
 
 export const imageState = signal<ImageState>(initialState);

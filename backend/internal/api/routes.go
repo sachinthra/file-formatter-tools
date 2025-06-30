@@ -72,9 +72,11 @@ func ResizeHandler(s3Client *s3.Client, jobManager *jobs.Manager) gin.HandlerFun
 		// Read options
 		width, _ := strconv.Atoi(c.PostForm("width"))
 		height, _ := strconv.Atoi(c.PostForm("height"))
-		maintainAspect := c.PostForm("maintain_aspect_ratio") == "true"
+		maintainAspect := c.PostForm("maintainAspectRatio") == "true"
 		quality, _ := strconv.Atoi(c.DefaultPostForm("quality", "85"))
 		maxSizeKB, _ := strconv.Atoi(c.DefaultPostForm("max_size_kb", "0")) // 0 = no limit
+
+		log.Printf("[INFO] [ResizeHandler] Options: width=%d, height=%d, maintainAspect=%t, quality=%d, maxSizeKB=%d", width, height, maintainAspect, quality, maxSizeKB)
 
 		// Detect extension/format
 		ext := strings.ToLower(filepath.Ext(header.Filename))
@@ -117,7 +119,7 @@ func ResizeHandler(s3Client *s3.Client, jobManager *jobs.Manager) gin.HandlerFun
 		_ = jobManager.SetProgress(ctx, jobID, 80)
 
 		// Get presigned URL
-		url, err := s3Client.GetPresignedURL(ctx, objectName, 10*time.Minute)
+		url, err := s3Client.GetPresignedURL(ctx, objectName, 10*time.Hour)
 		if err != nil {
 			log.Printf("[ERROR] [ResizeHandler] Failed to get download URL: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get download URL", "details": err.Error(), "job_id": jobID})
@@ -145,7 +147,7 @@ func BatchHandler(s3Client *s3.Client, jobManager *jobs.Manager) gin.HandlerFunc
 		// Read options
 		width, _ := strconv.Atoi(c.PostForm("width"))
 		height, _ := strconv.Atoi(c.PostForm("height"))
-		maintainAspect := c.PostForm("maintain_aspect_ratio") == "true"
+		maintainAspect := c.PostForm("maintainAspectRatio") == "true"
 		quality, _ := strconv.Atoi(c.DefaultPostForm("quality", "85"))
 		maxSizeKB, _ := strconv.Atoi(c.DefaultPostForm("max_size_kb", "0")) // 0 = no limit
 
