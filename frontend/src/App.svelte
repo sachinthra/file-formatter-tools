@@ -140,7 +140,9 @@
 
 <main>
   <h1>Single Image Resize</h1>
-
+  {#if errorMessage}
+    <p class="error">{errorMessage}</p>
+  {/if}
   <div
     class="drop-zone"
     role="button"
