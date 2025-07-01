@@ -17,6 +17,7 @@ export function ProcessedImage() {
           href={imageState.value.downloadUrl ?? undefined}
           target="_blank"
           rel="noopener noreferrer"
+          download
         >
           Download Resized Image
         </a>
