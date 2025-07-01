@@ -1,6 +1,5 @@
 import { imageState } from '../hooks/useImageProcessor';
 import type { JSX } from 'preact';
-import styles from './ImageUploader.module.css';
 
 export function ImageUploader() {
   const handleFileChange = (event: JSX.TargetedEvent<HTMLInputElement, Event>) => {
@@ -32,9 +31,9 @@ export function ImageUploader() {
   const processFile = (file: File) => {
     const originalSize = (file.size / 1024).toFixed(2);
     const img = new Image();
-    
+
     imageState.value = { ...imageState.value, imageFile: file };
-    
+
     img.onload = () => {
       imageState.value = {
         ...imageState.value,
@@ -46,23 +45,27 @@ export function ImageUploader() {
         maxSize: originalSize.toString(),
       };
     };
-    
+
     img.src = URL.createObjectURL(file);
   };
 
   return (
     <div
-      class={`${styles.dropZone} ${imageState.value.isDragging ? styles.isDragging : ''}`}
+      class={`border-2 border-dashed rounded-md p-8 text-center mb-4 cursor-pointer transition-all duration-200
+        bg-blue-50/5 hover:border-blue-700 hover:bg-blue-50/10
+        ${imageState.value.isDragging ? 'border-green-600 bg-green-100/10' : 'border-blue-500'}
+        focus:outline-none`}
       role="button"
       tabIndex={0}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onClick={() => document.getElementById('image')?.click()}
     >
       {imageState.value.imageFile ? (
-        <p>Selected File: {imageState.value.imageFile.name}</p>
+        <p class="text-gray-200">Selected File: {imageState.value.imageFile.name}</p>
       ) : (
-        <p>Drag and drop an image here, or click to select one.</p>
+        <p class="text-gray-400">Drag and drop an image here, or click to select one.</p>
       )}
       <input
         type="file"

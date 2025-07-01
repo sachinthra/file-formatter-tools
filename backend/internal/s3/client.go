@@ -81,6 +81,7 @@ func (c *Client) Upload(ctx context.Context, objectName string, data []byte, con
 // Returns a presigned download URL, valid for "expiry" duration
 func (c *Client) GetPresignedURL(ctx context.Context, objectName string, expiry time.Duration) (string, error) {
 	reqParams := make(url.Values)
+	reqParams.Set("response-content-disposition", "attachment")
 	u, err := c.Minio.PresignedGetObject(ctx, c.Bucket, objectName, expiry, reqParams)
 	if err != nil {
 		log.Printf("[ERROR] [S3] Failed to get presigned URL for %s: %v", objectName, err)

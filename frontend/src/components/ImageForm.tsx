@@ -1,7 +1,5 @@
 import { imageState } from '../hooks/useImageProcessor';
-import styles from './ImageForm.module.css';
 import { fetchWithAuth } from '../utils/api';
-// import { transformMinioUrl } from '../utils/url';
 
 export function ImageForm() {
   const handleSubmit = async (event: Event) => {
@@ -119,61 +117,79 @@ export function ImageForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} class={styles.form}>
-      <div>
-        <label htmlFor="width">Width:</label>
+    <form onSubmit={handleSubmit} class="w-full max-w-xl mx-auto flex flex-col gap-4">
+      {/* Width x Height */}
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="font-medium text-gray-200 whitespace-nowrap">Width x Height:</label>
         <input
           type="number"
-          id="width"
+          min="1"
+          class="w-20 px-2 py-1 rounded border border-gray-500 bg-gray-800 text-white"
           value={imageState.value.width}
-          onInput={(e) => imageState.value = { ...imageState.value, width: e.currentTarget.value }}
+          onInput={e => imageState.value = { ...imageState.value, width: e.currentTarget.value }}
+          placeholder="Width"
         />
-      </div>
-
-      <div>
-        <label htmlFor="height">Height:</label>
+        <span class="text-gray-400">px x</span>
         <input
           type="number"
-          id="height"
+          min="1"
+          class="w-20 px-2 py-1 rounded border border-gray-500 bg-gray-800 text-white"
           value={imageState.value.height}
-          onInput={(e) => imageState.value = { ...imageState.value, height: e.currentTarget.value }}
+          onInput={e => imageState.value = { ...imageState.value, height: e.currentTarget.value }}
+          placeholder="Height"
         />
+        <span class="text-gray-400">px</span>
       </div>
 
-      <div>
-        <label>
-          <input
-            type="checkbox"
-            checked={imageState.value.maintainAspectRatio}
-            onChange={(e) => imageState.value = { ...imageState.value, maintainAspectRatio: e.currentTarget.checked }}
-          />
+      {/* Maintain Aspect Ratio */}
+      <div class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="aspect"
+          checked={imageState.value.maintainAspectRatio}
+          onChange={e => imageState.value = { ...imageState.value, maintainAspectRatio: e.currentTarget.checked }}
+          class="accent-blue-500"
+        />
+        <label htmlFor="aspect" class="text-gray-200 font-medium select-none cursor-pointer">
           Maintain Aspect Ratio
         </label>
       </div>
 
-      <div>
-        <label htmlFor="quality">Quality (1-100):</label>
+      {/* Quality and Max Size */}
+      <div class="flex flex-wrap items-center gap-2">
+        <label htmlFor="quality" class="font-medium text-gray-200 whitespace-nowrap">Quality (1-100):</label>
         <input
           type="number"
           id="quality"
           min="1"
           max="100"
+          class="w-20 px-2 py-1 rounded border border-gray-500 bg-gray-800 text-white"
           value={imageState.value.quality}
-          onInput={(e) => imageState.value = { ...imageState.value, quality: Number(e.currentTarget.value) }}
+          onInput={e => imageState.value = { ...imageState.value, quality: Number(e.currentTarget.value) }}
+          placeholder="Quality"
         />
+        <span class="text-gray-400">%</span>
       </div>
-
-      <div>
-        <label htmlFor="maxSize">Max Size (KB):</label>
+      <div class="flex flex-wrap items-center gap-2">
+        <label htmlFor="maxSize" class="font-medium text-gray-200 whitespace-nowrap">Max Size (KB):</label>
         <input
           type="number"
           id="maxSize"
+          min="1"
+          step="any"
+          class="w-24 px-2 py-1 rounded border border-gray-500 bg-gray-800 text-white"
           value={imageState.value.maxSize}
-          onInput={(e) => imageState.value = { ...imageState.value, maxSize: e.currentTarget.value }}
+          onInput={e => imageState.value = { ...imageState.value, maxSize: e.currentTarget.value }}
+          placeholder="Max Size"
         />
+        <span class="text-gray-400">kb</span>
       </div>
-
-      <button type="submit">Resize</button>
+      <button
+        type="submit"
+        class="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
+      >
+        Resize
+      </button>
     </form>
   );
 }
