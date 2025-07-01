@@ -6,7 +6,7 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" height="40" alt="typescript logo"  />
 </div>
 
-![Image Formatter App](./docs/assets/sample_ui.png)
+![Image Formatter App](./docs/images/sample_ui.png)
 
 A web application for resizing, compressing, and smart-cropping images using Go, Vite + Preact, Redis, S3/MinIO, and (planned) OpenCV.
 
