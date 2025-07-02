@@ -1,4 +1,4 @@
-import { imageState,initialState } from '../hooks/useImageProcessor';
+import { imageState, initialState } from '../hooks/useImageProcessor';
 import type { JSX } from 'preact';
 
 export function ImageUploader() {
@@ -57,29 +57,30 @@ export function ImageUploader() {
         focus:outline-none`}
       role="button"
       tabIndex={0}
+      onChange={handleFileChange}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={() => document.getElementById('image')?.click()}
     >
-     {imageState.value.imageFile ? (
-  <div class="flex items-center justify-center gap-2 text-gray-200">
-    <span>Selected File: {imageState.value.imageFile.name}</span>
-    <button
-      type="button"
-      class="ml-2 text-red-400 hover:text-red-600 text-lg font-bold px-1 rounded-full focus:outline-none"
-      aria-label="Remove image"
-      onClick={e => {
-        e.stopPropagation();
-        imageState.value = { ...initialState };
-      }}
-    >
-      X
-    </button>
-  </div>
-) : (
-  <p class="text-gray-400">Drag and drop an image here, or click to select one.</p>
-)}
+      {imageState.value.imageFile ? (
+        <div class="flex items-center justify-center gap-2 text-gray-200">
+          <span>Selected File: {imageState.value.imageFile.name}</span>
+          <button
+            type="button"
+            class="ml-2 text-red-400 hover:text-red-600 text-lg font-bold px-1 rounded-full focus:outline-none"
+            aria-label="Remove image"
+            onClick={e => {
+              e.stopPropagation();
+              imageState.value = { ...initialState };
+            }}
+          >
+            X
+          </button>
+        </div>
+      ) : (
+        <p class="text-gray-400">Drag and drop an image here, or click to select one.</p>
+      )}
     </div>
   );
 }
