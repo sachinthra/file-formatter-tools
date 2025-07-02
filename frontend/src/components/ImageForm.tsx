@@ -186,9 +186,17 @@ export function ImageForm() {
       </div>
       <button
         type="submit"
-        class="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition"
+        disabled={
+          !imageState.value.imageFile ||
+          (imageState.value.progress > 0 && imageState.value.progress < 100)
+        }
+        class="w-full py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition disabled:bg-gray-500 disabled:cursor-not-allowed"
       >
-        Resize
+        {imageState.value.progress === 100
+          ? "Resize Again"
+          : (imageState.value.progress > 0 && imageState.value.progress < 100)
+            ? "Processing..."
+            : "Resize"}
       </button>
     </form>
   );

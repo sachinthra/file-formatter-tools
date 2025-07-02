@@ -35,10 +35,15 @@ export function App() {
             <ImageForm />
           </div>
         </div>
-        <div class="col-span-12 md:col-span-7 bg-gray-900 p-4 rounded-lg flex flex-col gap-4">
+        <div class="col-span-12 md:col-span-7 bg-gray-900 p-4 rounded-lg flex flex-col gap-4 relative">
           {/* Display the selected image */}
           {imageState.value.imageFile && !imageState.value.downloadUrl && (
             <div class="flex justify-center items-center w-full">
+              {imageState.value.originalWidth && (
+                <div class="absolute left-1/2 -translate-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded border-2">
+                  {imageState.value.originalWidth} x {imageState.value.originalHeight} px, {imageState.value.originalSize}
+                </div>
+              )}
               <img
                 src={URL.createObjectURL(imageState.value.imageFile)}
                 alt="Selected"
@@ -46,9 +51,15 @@ export function App() {
               />
             </div>
           )}
+
           {/* Display Processed image which we get as a presigned minio link */}
           {imageState.value.downloadUrl && (
-            <div class="flex justify-center items-center w-full">
+            <div class="flex justify-center items-center w-full relative">
+              {imageState.value.processedWidth && (
+                <div class="absolute left-1/2 -translate-1/2 bg-black/70 text-white text-xs px-2 py-1 rounded border-2">
+                  {imageState.value.processedWidth} x {imageState.value.processedHeight} px, {imageState.value.processedSize}
+                </div>
+              )}
               <img
                 src={imageState.value.downloadUrl}
                 alt="Processed"
@@ -61,7 +72,7 @@ export function App() {
               <p class="text-gray-200">Progress: {imageState.value.progress}%</p>
             </div>
           )}
-          {imageState.value.progress == 100 &&imageState.value.downloadUrl && (
+          {imageState.value.progress == 100 && imageState.value.downloadUrl && (
             <div>
               <ProcessedImage />
             </div>

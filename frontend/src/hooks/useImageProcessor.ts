@@ -1,7 +1,7 @@
 import { signal } from '@preact/signals';
 import type { ImageState } from '../types/image';
 
-const initialState: ImageState = {
+export const initialState: ImageState = {
   imageFile: null,
   width: '',
   height: '',
